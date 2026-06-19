@@ -13,86 +13,100 @@ type Props = {
 };
 
 export default function HistoryTable({ history }: Props) {
-  const riskColor = (risk: string) => {
+  const riskTone = (risk: string) => {
     switch (risk) {
       case "LOW":
-        return "bg-green-500/20 text-green-400";
+        return { color: "#5DD39E" };
       case "MEDIUM":
-        return "bg-yellow-500/20 text-yellow-400";
+        return { color: "#FBC54B" };
       case "HIGH":
-        return "bg-red-500/20 text-red-400";
+        return { color: "#F2786F" };
       default:
-        return "bg-slate-500/20 text-slate-400";
+        return { color: "#9AA0AA" };
     }
   };
 
+  const count = history?.length || 0;
+
   return (
-    <div className="bg-slate-900 border border-slate-800 rounded-2xl p-6">
+    <section className="rounded-2xl border border-line bg-vault-800/70 backdrop-blur-sm shadow-vault overflow-hidden h-full flex flex-col">
 
-      <div className="flex justify-between mb-4">
-        <h2 className="text-xl font-semibold">Verification History</h2>
-        <span className="text-sm text-slate-400">
-          {history?.length || 0} Records
+      <header className="flex items-center justify-between px-6 py-4 border-b border-line">
+        <span className="eyebrow">Verification Ledger</span>
+        <span className="font-mono text-xs text-ink-dim tnum">
+          {String(count).padStart(2, "0")} {count === 1 ? "record" : "records"}
         </span>
-      </div>
+      </header>
 
-      {!history || history.length === 0 ? (
-        <p className="text-slate-500 text-sm">No history yet.</p>
+      {count === 0 ? (
+        <div className="flex-1 flex flex-col items-center justify-center text-center px-6 py-16">
+          <div className="h-10 w-10 rounded-full border border-line flex items-center justify-center mb-4">
+            <span className="text-gold-600 text-lg">◆</span>
+          </div>
+          <p className="text-ink text-sm font-medium">No assays yet</p>
+          <p className="text-ink-faint text-xs mt-1 max-w-[16rem]">
+            Run a verification and each certified result will be logged here.
+          </p>
+        </div>
       ) : (
-        <div className="overflow-x-auto">
-          <table className="w-full text-sm">
-            <thead>
-              <tr className="text-slate-400 border-b border-slate-800">
-                <th className="py-3 text-left">Asset</th>
-                <th className="py-3 text-left">Weight</th>
-                <th className="py-3 text-left">Purity</th>
-                <th className="py-3 text-left">Score</th>
-                <th className="py-3 text-left">Risk</th>
-                <th className="py-3 text-left">Tx</th>
-                <th className="py-3 text-left">Date</th>
-              </tr>
-            </thead>
+        <ul className="flex-1 overflow-y-auto divide-y divide-line">
+          {history.map((item, i) => {
+            const tone = riskTone(item.risk);
+            const onChain = item.txHash && item.txHash !== "FAILED";
+            return (
+              <li
+                key={item.txHash || i}
+                className="px-6 py-4 hover:bg-vault-700/40 transition-colors"
+              >
+                <div className="flex items-center justify-between gap-3">
+                  <div className="min-w-0">
+                    <p className="text-sm text-ink font-medium truncate">
+                      {item.asset || "Unnamed asset"}
+                    </p>
+                    <p className="font-mono text-[11px] text-ink-faint tnum mt-0.5">
+                      {item.weight}g · {item.purity}% · {item.date}
+                    </p>
+                  </div>
 
-            <tbody>
-              {history.map((item, i) => (
-                <tr key={item.txHash || i} className="border-b border-slate-800">
-
-                  <td className="py-3">{item.asset}</td>
-                  <td className="py-3">{item.weight} g</td>
-                  <td className="py-3">{item.purity}%</td>
-                  <td className="py-3">{item.score}/100</td>
-
-                  <td className="py-3">
-                    <span className={`px-2 py-1 rounded ${riskColor(item.risk)}`}>
+                  <div className="flex items-center gap-3 shrink-0">
+                    <span className="font-mono tnum text-base text-ink">
+                      {item.score}
+                      <span className="text-ink-faint text-xs">/100</span>
+                    </span>
+                    <span
+                      className="font-mono text-[10px] px-2 py-0.5 rounded border"
+                      style={{
+                        color: tone.color,
+                        borderColor: `${tone.color}55`,
+                        background: `${tone.color}14`,
+                      }}
+                    >
                       {item.risk}
                     </span>
-                  </td>
+                  </div>
+                </div>
 
-                  <td className="py-3 text-blue-400">
-                    {item.txHash ? (
-                      <a
-                        href={`https://testnet.cspr.live/deploy/${item.txHash}`}
-                        target="_blank"
-                        rel="noreferrer"
-                      >
-                        View
-                      </a>
-                    ) : (
-                      "Pending"
-                    )}
-                  </td>
-
-                  <td className="py-3 text-slate-400">
-                    {item.date}
-                  </td>
-
-                </tr>
-              ))}
-            </tbody>
-
-          </table>
-        </div>
+                <div className="mt-2">
+                  {onChain ? (
+                    <a
+                      href={`https://testnet.cspr.live/deploy/${item.txHash}`}
+                      target="_blank"
+                      rel="noreferrer"
+                      className="font-mono text-[11px] text-gold-400/80 hover:text-gold-400 transition-colors"
+                    >
+                      {item.txHash.slice(0, 10)}…{item.txHash.slice(-6)} ↗
+                    </a>
+                  ) : (
+                    <span className="font-mono text-[11px] text-ink-faint">
+                      not recorded on-chain
+                    </span>
+                  )}
+                </div>
+              </li>
+            );
+          })}
+        </ul>
       )}
-    </div>
+    </section>
   );
 }

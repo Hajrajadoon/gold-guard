@@ -1,13 +1,13 @@
 import { useEffect, useState } from "react";
 
-import StatCard from "../components/StatCard";
-import RiskMeter from "../components/RiskMeter";
+import AssayResult from "../components/AssayResult";
 import ResultPanel from "../components/ResultPanel";
 import HistoryTable from "../components/HistoryTable";
 import VerificationForm from "../components/VerificationForm";
 
 import {
-  DeployUtil
+  DeployUtil,
+  CLPublicKey
 } from "casper-js-sdk";
 
 import { createVerificationDeploy } from "../lib/casper/deploy";
@@ -280,6 +280,8 @@ const onVerify = async () => {
         createVerificationDeploy(
           activeWallet,
           assetName,
+          w,
+          p,
           score,
           risk
         );
@@ -374,6 +376,14 @@ console.log(
   signed
 );
 
+if(signed?.cancelled){
+
+  throw new Error(
+    "Signing was cancelled in the wallet"
+  );
+
+}
+
 if(
   !signed ||
   !signed.signatureHex
@@ -385,32 +395,32 @@ if(
 
 }
 
-const signature =
-  signed.signatureHex.startsWith("01")
+// Raw signature bytes from the wallet (no algorithm prefix).
+const signatureBytes =
+  signed.signature instanceof Uint8Array
   ?
-  signed.signatureHex
+  signed.signature
   :
-  "01" + signed.signatureHex;
+  Uint8Array.from(
+    Buffer.from(
+      signed.signatureHex,
+      "hex"
+    )
+  );
 
-const signedDeploy:any = {
+// setSignature attaches the approval with the correct algorithm
+// prefix (01 = Ed25519, 02 = secp256k1) derived from the key.
+const signedDeployObj =
+  DeployUtil.setSignature(
+    deploy,
+    signatureBytes,
+    CLPublicKey.fromHex(activeWallet)
+  );
 
-  deploy: {
-
-    ...deployJson.deploy,
-
-    approvals:[
-      {
-        signer:
-          deployJson.deploy.header.account,
-
-        signature:
-          signature
-      }
-    ]
-
-  }
-
-};
+const signedDeploy:any =
+  DeployUtil.deployToJson(
+    signedDeployObj
+  );
 
 console.log(
   "FINAL SIGNED DEPLOY:",
@@ -515,179 +525,110 @@ console.log(
 };
 
 
+  const shortKey = (k: string) => `${k.slice(0, 6)}…${k.slice(-4)}`;
+
   return (
-
-<div className="min-h-screen bg-[#070A12] text-white">
-
-
-<div className="flex justify-between px-8 py-5 border-b border-white/10 bg-[#0B1020]">
-
-
-<h1 className="text-xl font-semibold">
-GoldGuard AI
-</h1>
-
-
-
-{
-
-!wallet ?
-
-
-<button
-
-onClick={handleConnect}
-
-className="bg-yellow-500 px-4 py-2 rounded text-black"
-
->
-
-Connect Wallet
-
-</button>
-
-
-:
-
-
-<div className="flex gap-3 items-center">
-
-
-<span className="text-green-400 text-xs">
-Connected
-</span>
-
-
-<button
-
-onClick={handleDisconnect}
-
-className="text-red-400 text-xs"
-
->
-
-Disconnect
-
-</button>
-
-
-</div>
-
-}
-
-
-</div>
-
-
-
-
-
-{
-
-error &&
-
-<div className="px-8 py-2 text-red-400 text-sm">
-
-{error}
-
-</div>
-
-}
-
-
-
-
-
-
-
-<div className="px-8 py-6 grid grid-cols-12 gap-6">
-
-
-<div className="col-span-8 space-y-6">
-
-
-
-<div className="grid grid-cols-2 gap-4">
-
-
-<StatCard
-title="AI Score"
-value={result?.score ?? 0}
-/>
-
-
-
-<StatCard
-title="Risk Level"
-value={result?.risk ?? "-"}
-/>
-
-
-</div>
-
-
-
-<RiskMeter />
-
-
-
-<VerificationForm
-
-assetName={assetName}
-
-weight={weight}
-
-purity={purity}
-
-loading={loading}
-
-setAssetName={setAssetName}
-
-setWeight={setWeight}
-
-setPurity={setPurity}
-
-onVerify={onVerify}
-
-/>
-
-
-
-
-
-{
-
-result &&
-
-<ResultPanel result={result}/>
-
-}
-
-
-
-</div>
-
-
-
-
-
-<div className="col-span-4">
-
-
-<HistoryTable history={history}/>
-
-
-</div>
-
-
-
-</div>
-
-
-
-</div>
-
-
+    <div className="min-h-screen text-ink">
+
+      {/* ── Header ───────────────────────────────────────── */}
+      <header className="sticky top-0 z-20 border-b border-line bg-vault-900/80 backdrop-blur-md">
+        <div className="max-w-6xl mx-auto px-6 h-16 flex items-center justify-between">
+
+          <div className="flex items-center gap-3">
+            <span className="text-gold-400 text-lg leading-none">◆</span>
+            <div className="leading-none">
+              <p className="font-display font-semibold tracking-tight text-ink">
+                GOLDGUARD
+              </p>
+              <p className="eyebrow mt-1">Assay · Casper</p>
+            </div>
+          </div>
+
+          <div className="flex items-center gap-3">
+            <span className="hidden sm:flex items-center gap-2 px-3 py-1.5 rounded-full border border-line bg-vault-800/60">
+              <span className="h-1.5 w-1.5 rounded-full bg-verdict-low animate-pulse" />
+              <span className="font-mono text-[11px] text-ink-dim">Testnet</span>
+            </span>
+
+            {!wallet ? (
+              <button
+                onClick={handleConnect}
+                className="px-4 py-2 rounded-lg font-medium text-vault-900
+                           bg-gradient-to-r from-gold-400 to-gold-600 hover:shadow-glow transition-all"
+              >
+                Connect wallet
+              </button>
+            ) : (
+              <div className="flex items-center gap-3 pl-3 pr-1.5 py-1.5 rounded-lg border border-line bg-vault-800/60">
+                <span className="h-1.5 w-1.5 rounded-full bg-verdict-low" />
+                <span className="font-mono text-xs text-ink-dim">{shortKey(wallet)}</span>
+                <button
+                  onClick={handleDisconnect}
+                  className="px-2 py-1 rounded-md text-xs text-ink-faint hover:text-verdict-high transition-colors"
+                >
+                  Disconnect
+                </button>
+              </div>
+            )}
+          </div>
+        </div>
+      </header>
+
+      <main className="max-w-6xl mx-auto px-6 py-8">
+
+        {/* Page intro */}
+        <div className="mb-8 rise">
+          <p className="eyebrow">Precious-metal verification</p>
+          <h1 className="font-display text-2xl sm:text-3xl font-semibold tracking-tight mt-2 text-ink">
+            Assay an asset, certify it on-chain
+          </h1>
+          <p className="text-ink-dim text-sm mt-2 max-w-xl">
+            Score authenticity, read the risk, and write a tamper-proof record to the Casper network.
+          </p>
+        </div>
+
+        {error && (
+          <div className="mb-6 rounded-xl border border-verdict-high/40 bg-verdict-high/10 px-4 py-3 text-sm text-verdict-high">
+            {error}
+          </div>
+        )}
+
+        <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
+
+          {/* Left — assay + form + certificate */}
+          <div className="lg:col-span-7 space-y-6">
+            <div className="rise"><AssayResult result={result} /></div>
+
+            <VerificationForm
+              assetName={assetName}
+              weight={weight}
+              purity={purity}
+              loading={loading}
+              setAssetName={setAssetName}
+              setWeight={setWeight}
+              setPurity={setPurity}
+              onVerify={onVerify}
+            />
+
+            {result && (
+              <div className="rise"><ResultPanel result={result} /></div>
+            )}
+          </div>
+
+          {/* Right — ledger */}
+          <div className="lg:col-span-5">
+            <div className="lg:sticky lg:top-24 h-[calc(100vh-8rem)]">
+              <HistoryTable history={history} />
+            </div>
+          </div>
+        </div>
+
+        <footer className="mt-12 pt-6 border-t border-line flex flex-wrap items-center justify-between gap-2">
+          <p className="eyebrow">GoldGuard · On-chain assay</p>
+          <p className="font-mono text-[11px] text-ink-faint">Casper testnet · casper-test</p>
+        </footer>
+      </main>
+    </div>
   );
 
 }
