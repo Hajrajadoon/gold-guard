@@ -7,20 +7,20 @@ import {
 
 import { CONTRACT_WASM } from "./wasm";
 
+// Builds a GoldGuard verification deploy.
+//
+// The WASM runs as session code: its `call()` reads these runtime args and
+// stores them under named keys in the caller's account. The args travel with
+// the deploy, so asset / weight / purity / score / risk are visible on the
+// transaction in any Casper block explorer (e.g. cspr.live).
 export const createVerificationDeploy = (
   publicKeyHex: string,
   asset: string,
+  weight: number,
+  purity: number,
   score: number,
-  risk: string,
-  contractHash?: string
+  risk: string
 ) => {
-
-  console.log("SDK CHECK", {
-    DeployUtil,
-    CLPublicKey,
-    RuntimeArgs,
-    CLValueBuilder
-  });
 
   const publicKey =
     CLPublicKey.fromHex(
@@ -33,81 +33,57 @@ export const createVerificationDeploy = (
       "casper-test"
     );
 
-  let session;
-
-  if (!contractHash) {
-
-    console.log(
-      "CREATING WASM DEPLOY"
+  const wasmBytes =
+    Uint8Array.from(
+      Buffer.from(
+        CONTRACT_WASM,
+        "base64"
+      )
     );
 
-    const wasmBytes =
-      Uint8Array.from(
-        Buffer.from(
-          CONTRACT_WASM,
-          "base64"
-        )
-      );
+  const args =
+    RuntimeArgs.fromMap({
 
-    session =
-      DeployUtil.ExecutableDeployItem
-      .newModuleBytes(
-        wasmBytes,
-        RuntimeArgs.fromMap({})
-      );
-
-  } else {
-
-    console.log(
-      "CREATING CONTRACT CALL"
-    );
-
-    const args =
-      RuntimeArgs.fromMap({
-
-        asset:
-          CLValueBuilder.string(
-            asset || "unknown"
-          ),
-
-        score:
-          CLValueBuilder.u64(
-            Math.floor(score || 0)
-          ),
-
-        risk:
-          CLValueBuilder.string(
-            risk || "LOW"
-          )
-
-      });
-
-    session =
-      DeployUtil.ExecutableDeployItem
-      .newStoredContractByHash(
-
-        Uint8Array.from(
-          Buffer.from(
-            contractHash.replace(
-              "hash-",
-              ""
-            ),
-            "hex"
-          )
+      asset:
+        CLValueBuilder.string(
+          asset || "unknown"
         ),
 
-        "verify",
+      weight:
+        CLValueBuilder.u64(
+          Math.max(0, Math.floor(weight || 0))
+        ),
 
-        args
+      purity:
+        CLValueBuilder.u64(
+          Math.max(0, Math.floor(purity || 0))
+        ),
 
-      );
+      score:
+        CLValueBuilder.u64(
+          Math.max(0, Math.floor(score || 0))
+        ),
 
-  }
+      risk:
+        CLValueBuilder.string(
+          risk || "LOW"
+        )
 
- const payment =
-  DeployUtil.standardPayment(
-    20000000000
-  );
+    });
+
+  const session =
+    DeployUtil.ExecutableDeployItem
+    .newModuleBytes(
+      wasmBytes,
+      args
+    );
+
+  // Session/WASM deploys are charged the full payment amount. This contract is
+  // small (~17 KB) and only writes a few named keys, so 10 CSPR is comfortable.
+  const payment =
+    DeployUtil.standardPayment(
+      10000000000
+    );
 
   const deploy =
     DeployUtil.makeDeploy(
@@ -115,21 +91,6 @@ export const createVerificationDeploy = (
       session,
       payment
     );
-
-  console.log(
-    "DEPLOY CREATED:",
-    deploy
-  );
-
-  // ADD THIS
-  console.log(
-    "DEPLOY JSON:",
-    JSON.stringify(
-      DeployUtil.deployToJson(deploy),
-      null,
-      2
-    )
-  );
 
   return deploy;
 };

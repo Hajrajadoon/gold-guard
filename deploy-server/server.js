@@ -210,6 +210,63 @@ error.message
 
 
 
+// Look up a deploy's on-chain status/execution result by hash. Used by the
+// frontend to build the blockchain certificate.
+app.post("/deploy-info", async (req, res) => {
+
+try {
+
+  const hash =
+    req.body?.hash;
+
+  if (!hash) {
+    throw new Error("Missing deploy hash");
+  }
+
+  const rpcResponse =
+    await fetch(
+      "https://node.testnet.casper.network/rpc",
+      {
+        method: "POST",
+
+        headers: {
+          "Content-Type": "application/json"
+        },
+
+        body: JSON.stringify({
+          jsonrpc: "2.0",
+          id: 1,
+          method: "info_get_deploy",
+          params: {
+            deploy_hash: hash,
+            finalized_approvals: false
+          }
+        })
+      }
+    );
+
+  const result =
+    await rpcResponse.json();
+
+  res.json(result);
+
+}
+catch (error) {
+
+  console.error(
+    "DEPLOY-INFO ERROR:",
+    error
+  );
+
+  res.status(500).json({
+    message: error.message
+  });
+
+}
+
+});
+
+
 app.listen(
 4000,
 ()=>{

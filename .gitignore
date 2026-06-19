@@ -141,3 +141,7 @@ dist
 vite.config.js.timestamp-*
 vite.config.ts.timestamp-*
 .vite/
+
+# Rust build artifacts
+casper-contract-clean/contract/target/
+casper-contract-clean/**/target/
