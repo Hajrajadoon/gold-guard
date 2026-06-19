@@ -145,3 +145,6 @@ vite.config.ts.timestamp-*
 # Rust build artifacts
 casper-contract-clean/contract/target/
 casper-contract-clean/**/target/
+
+# SQLite database
+deploy-server/goldguard.db*

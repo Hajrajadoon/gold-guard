@@ -1,4 +1,5 @@
 import { useEffect, useState } from "react";
+import { Link } from "react-router-dom";
 
 import AssayResult from "../components/AssayResult";
 import ResultPanel from "../components/ResultPanel";
@@ -22,6 +23,8 @@ import {
 import { sendDeploy } from "../lib/casper/send";
 
 import { VerificationResult } from "../types/verification";
+
+import { getRecords, saveRecord } from "../lib/api/records";
 
 
 export default function Dashboard() {
@@ -60,19 +63,19 @@ export default function Dashboard() {
 
   useEffect(() => {
 
-    const saved =
-      localStorage.getItem(
-        "gg_history"
-      );
-
-
-    if(saved){
-
-      setHistory(
-        JSON.parse(saved)
-      );
-
-    }
+    // Load from the database; fall back to the local cache if the
+    // server is unreachable.
+    (async () => {
+      try {
+        const rows = await getRecords();
+        setHistory(rows);
+      } catch {
+        const saved = localStorage.getItem("gg_history");
+        if (saved) {
+          setHistory(JSON.parse(saved));
+        }
+      }
+    })();
 
   }, []);
 
@@ -500,6 +503,10 @@ console.log(
     );
 
 
+    // Persist to the database (non-blocking).
+    saveRecord(item).catch(() => {});
+
+
 
     setAssetName("");
     setWeight("");
@@ -545,6 +552,13 @@ console.log(
           </div>
 
           <div className="flex items-center gap-3">
+            <Link
+              to="/records"
+              className="px-3 py-1.5 rounded-lg text-sm text-ink border border-line hover:border-gold-600/60 hover:text-gold-400 transition-colors"
+            >
+              Records
+            </Link>
+
             <span className="hidden sm:flex items-center gap-2 px-3 py-1.5 rounded-full border border-line bg-vault-800/60">
               <span className="h-1.5 w-1.5 rounded-full bg-verdict-low animate-pulse" />
               <span className="font-mono text-[11px] text-ink-dim">Testnet</span>

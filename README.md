@@ -15,6 +15,8 @@ GoldGuard AI lets a user submit a physical gold asset (name, weight, purity), ru
 - [Project Structure](#project-structure)
 - [Getting Started](#getting-started)
   - [Prerequisites](#prerequisites)
+  - [First Time Run](#first-time-run)
+  - [Regular](#regular)
   - [1. Smart Contract](#1-smart-contract-casper-contract-clean)
   - [2. Deploy Server](#2-deploy-server-deploy-server)
   - [3. Frontend](#3-frontend-frontend)
@@ -145,6 +147,51 @@ gold-guard/
 - **Rust** with the `nightly` toolchain and the `wasm32-unknown-unknown` target (only needed to rebuild the contract)
 - The **Casper Wallet** browser extension, funded with **testnet** CSPR
 - `wasm-strip` (optional, from WABT) for contract size optimization
+
+> **Database:** records are stored in **SQLite** (`better-sqlite3`). There is
+> **no separate database to install and no migrations to run** — the
+> `deploy-server/goldguard.db` file and its `records` table are created
+> automatically the first time the deploy server starts.
+
+### First Time Run
+
+For a fresh clone / new machine. This installs dependencies; the SQLite
+database is created automatically on first server start.
+
+```bash
+# 1) Deploy server — relay + records DB (Terminal 1)
+cd deploy-server
+npm install            # also compiles the better-sqlite3 native binding
+node server.js         # creates goldguard.db on first run
+# → Deploy server running on port 4000
+
+# 2) Frontend (Terminal 2)
+cd frontend
+npm install
+npm run dev            # then open the printed http://localhost:5173 URL
+```
+
+Then connect your Casper Wallet (funded with testnet CSPR) and run an assay.
+
+> Rebuilding the smart contract is **optional** — the compiled WASM is already
+> embedded in the frontend. You only need the Rust toolchain if you change
+> `lib.rs` (see [Smart Contract](#1-smart-contract-casper-contract-clean)).
+
+### Regular
+
+Day-to-day, once dependencies are already installed:
+
+```bash
+# Terminal 1
+cd deploy-server && node server.js
+
+# Terminal 2
+cd frontend && npm run dev
+```
+
+Saved records persist in `deploy-server/goldguard.db` between runs. Always start
+the deploy server before verifying, since the frontend submits deploys and reads
+records through it.
 
 ### 1. Smart Contract (`casper-contract-clean/`)
 

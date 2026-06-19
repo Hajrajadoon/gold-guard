@@ -1,5 +1,6 @@
 import express from "express";
 import cors from "cors";
+import db from "./db.js";
 
 
 const app = express();
@@ -13,6 +14,52 @@ app.use(
     limit:"20mb"
   })
 );
+
+
+// ── Verification records (SQLite) ──────────────────────────────
+
+// List records, newest first.
+app.get("/records", (req, res) => {
+  try {
+    const rows = db
+      .prepare(
+        `SELECT asset, weight, purity, score, risk, tx_hash AS txHash, date
+         FROM records ORDER BY id DESC LIMIT 200`
+      )
+      .all();
+    res.json(rows);
+  } catch (error) {
+    console.error("RECORDS GET ERROR:", error);
+    res.status(500).json({ message: error.message });
+  }
+});
+
+// Save one record.
+app.post("/records", (req, res) => {
+  try {
+    const { asset, weight, purity, score, risk, txHash, date } = req.body || {};
+
+    const info = db
+      .prepare(
+        `INSERT INTO records (asset, weight, purity, score, risk, tx_hash, date)
+         VALUES (?, ?, ?, ?, ?, ?, ?)`
+      )
+      .run(
+        asset ?? "",
+        Number(weight) || 0,
+        Number(purity) || 0,
+        Math.floor(Number(score) || 0),
+        risk ?? "",
+        txHash ?? "",
+        date ?? new Date().toLocaleString()
+      );
+
+    res.json({ id: info.lastInsertRowid });
+  } catch (error) {
+    console.error("RECORDS POST ERROR:", error);
+    res.status(500).json({ message: error.message });
+  }
+});
 
 
 

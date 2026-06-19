@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { generateCertificate } from "../utils/generateCertificate";
-import { getDeployInfo } from "../lib/casper/status";
+import { waitForDeployInfo } from "../lib/casper/status";
 import { useWalletStore } from "../store/walletStore";
 import { VerificationResult } from "../types/verification";
 
@@ -11,6 +11,7 @@ type Props = {
 export default function ResultPanel({ result }: Props) {
   const { publicKey } = useWalletStore();
   const [downloading, setDownloading] = useState(false);
+  const [progress, setProgress] = useState("");
 
   const explorerUrl = (tx: string) =>
     `https://testnet.cspr.live/deploy/${tx}`;
@@ -20,11 +21,14 @@ export default function ResultPanel({ result }: Props) {
 
   const handleDownload = async () => {
     setDownloading(true);
+    setProgress("Fetching on-chain data…");
     try {
-      // Pull the live on-chain record (status, block, gas, caller) so the
-      // certificate mirrors what cspr.live shows.
+      // Wait for the deploy to finalize so the certificate reflects the
+      // confirmed record (status, block, gas) instead of "Pending".
       const info = onChain
-        ? await getDeployInfo(result.txHash)
+        ? await waitForDeployInfo(result.txHash, {
+            onTick: (a, t) => setProgress(`Confirming on-chain… (${a}/${t})`),
+          })
         : null;
 
       generateCertificate({
@@ -46,6 +50,7 @@ export default function ResultPanel({ result }: Props) {
       });
     } finally {
       setDownloading(false);
+      setProgress("");
     }
   };
 
@@ -116,7 +121,7 @@ export default function ResultPanel({ result }: Props) {
                        bg-gradient-to-r from-gold-400 to-gold-600 hover:shadow-glow
                        disabled:opacity-60 disabled:cursor-not-allowed transition-all duration-200"
           >
-            {downloading ? "Fetching on-chain data…" : "Download certificate"}
+            {downloading ? progress || "Working…" : "Download certificate"}
           </button>
 
           {onChain ? (

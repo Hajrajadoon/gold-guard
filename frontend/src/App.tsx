@@ -1,5 +1,6 @@
 import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
 import Dashboard from "./pages/Dashboard";
+import Records from "./pages/Records";
 import Landing from "./pages/Landing";
 
 export default function App() {
@@ -14,6 +15,9 @@ export default function App() {
 
         {/* DASHBOARD */}
         <Route path="/dashboard" element={<Dashboard />} />
+
+        {/* RECORDS */}
+        <Route path="/records" element={<Records />} />
 
         {/* fallback */}
         <Route path="*" element={<Navigate to="/dashboard" replace />} />
