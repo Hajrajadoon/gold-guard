@@ -96,3 +96,28 @@ export const getDeployInfo = async (
     return info;
   }
 };
+
+// Polls until the deploy is finalized (Success/Failed) or the attempts run
+// out. Casper testnet usually finalizes within ~30-90s, so a deploy downloaded
+// right after signing would otherwise read "Pending".
+export const waitForDeployInfo = async (
+  hash: string,
+  opts: {
+    tries?: number;
+    intervalMs?: number;
+    onTick?: (attempt: number, tries: number) => void;
+  } = {}
+): Promise<DeployInfo> => {
+  const tries = opts.tries ?? 12;       // ~33s total
+  const intervalMs = opts.intervalMs ?? 3000;
+
+  let info = await getDeployInfo(hash);
+
+  for (let attempt = 1; attempt < tries && info.status === "Pending"; attempt++) {
+    opts.onTick?.(attempt, tries);
+    await new Promise((r) => setTimeout(r, intervalMs));
+    info = await getDeployInfo(hash);
+  }
+
+  return info;
+};
