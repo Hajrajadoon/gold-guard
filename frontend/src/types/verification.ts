@@ -1,5 +1,5 @@
 export type VerificationResult = {
-  asset: string;
+  asset: "gold" | "silver";
   weight: number;
   purity: number;
   score: number;

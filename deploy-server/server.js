@@ -2,12 +2,9 @@ import express from "express";
 import cors from "cors";
 import db from "./db.js";
 
-
 const app = express();
 
-
 app.use(cors());
-
 
 app.use(
   express.json({
@@ -16,151 +13,187 @@ app.use(
 );
 
 
-// ── Verification records (SQLite) ──────────────────────────────
+// ===============================
+// RECORDS
+// ===============================
 
-// List records, newest first.
-app.get("/records", (req, res) => {
-  try {
-    const rows = db
-      .prepare(
-        `SELECT asset, weight, purity, score, risk, tx_hash AS txHash, date
-         FROM records ORDER BY id DESC LIMIT 200`
-      )
-      .all();
-    res.json(rows);
-  } catch (error) {
-    console.error("RECORDS GET ERROR:", error);
-    res.status(500).json({ message: error.message });
-  }
+
+app.get("/records",(req,res)=>{
+
+try{
+
+const rows =
+db.prepare(
+`
+SELECT
+asset,
+weight,
+purity,
+score,
+risk,
+tx_hash AS txHash,
+date
+FROM records
+ORDER BY id DESC
+LIMIT 200
+`
+).all();
+
+
+res.json(rows);
+
+
+}catch(error){
+
+console.error(
+"GET RECORDS ERROR",
+error
+);
+
+res.status(500).json({
+message:error.message
 });
 
-// Save one record.
-app.post("/records", (req, res) => {
-  try {
-    const { asset, weight, purity, score, risk, txHash, date } = req.body || {};
+}
 
-    const info = db
-      .prepare(
-        `INSERT INTO records (asset, weight, purity, score, risk, tx_hash, date)
-         VALUES (?, ?, ?, ?, ?, ?, ?)`
-      )
-      .run(
-        asset ?? "",
-        Number(weight) || 0,
-        Number(purity) || 0,
-        Math.floor(Number(score) || 0),
-        risk ?? "",
-        txHash ?? "",
-        date ?? new Date().toLocaleString()
-      );
-
-    res.json({ id: info.lastInsertRowid });
-  } catch (error) {
-    console.error("RECORDS POST ERROR:", error);
-    res.status(500).json({ message: error.message });
-  }
 });
 
 
 
-app.post("/deploy", async(req,res)=>{
 
+app.post("/records",(req,res)=>{
 
 try{
 
 
-console.log(
-  "RECEIVED DEPLOY BODY:"
+const {
+asset,
+weight,
+purity,
+score,
+risk,
+txHash,
+date
+
+}=req.body;
+
+
+
+const info =
+db.prepare(
+`
+INSERT INTO records
+(
+asset,
+weight,
+purity,
+score,
+risk,
+tx_hash,
+date
+)
+VALUES(?,?,?,?,?,?,?)
+`
+)
+.run(
+
+asset,
+Number(weight),
+Number(purity),
+Number(score),
+risk,
+txHash,
+date
+
 );
 
 
-console.log(
-  JSON.stringify(
-    req.body,
-    null,
-    2
-  )
+
+res.json({
+id:info.lastInsertRowid
+});
+
+
+
+}catch(error){
+
+console.error(
+"POST RECORD ERROR",
+error
 );
 
+res.status(500).json({
+message:error.message
+});
+
+}
+
+});
 
 
 
-/*
-  HANDLE BOTH FORMATS
-
-  1)
-  {
-    hash,
-    header,
-    payment,
-    session,
-    approvals
-  }
 
 
-  2)
-  {
-    deploy:{
-       hash,
-       header,
-       payment,
-       session,
-       approvals
-    }
-  }
+// ===============================
+// DEPLOY
+// ===============================
 
-*/
+
+app.post("/deploy",async(req,res)=>{
+
+try{
 
 
 const deploy =
-req.body.deploy
-?
-req.body.deploy
-:
+req.body.deploy ??
 req.body;
 
 
 
 console.log(
-  "FINAL DEPLOY SENT TO CASPER:"
+"DEPLOY HASH REQUEST"
 );
 
 
-console.log(
-  JSON.stringify(
-    deploy,
-    null,
-    2
-  )
-);
+const rpc =
+await fetch(
+"https://node.testnet.casper.network/rpc",
+{
+method:"POST",
 
+headers:{
+"Content-Type":"application/json"
+},
 
+body:JSON.stringify({
 
-if(
- !deploy ||
- !deploy.hash ||
- !deploy.header ||
- !deploy.payment ||
- !deploy.session ||
- !deploy.approvals
-){
+jsonrpc:"2.0",
 
-throw new Error(
-"Invalid deploy structure"
-);
+id:1,
 
+method:"account_put_deploy",
+
+params:{
+deploy
 }
 
+})
+
+});
+
+
+const result =
+await rpc.json();
 
 
 console.log(
-"SERVER APPROVAL:"
+"CASPER RPC RESULT"
 );
 
 
 console.log(
 JSON.stringify(
-deploy.approvals[0],
+result,
 null,
 2
 )
@@ -168,9 +201,54 @@ null,
 
 
 
+res.json(result);
 
 
-const rpcResponse =
+}catch(error){
+
+
+console.error(
+"DEPLOY ERROR",
+error
+);
+
+
+res.status(500).json({
+message:error.message
+});
+
+
+}
+
+});
+
+
+
+
+
+// ===============================
+// DEPLOY INFO
+// ===============================
+
+
+app.post("/deploy-info",async(req,res)=>{
+
+
+try{
+
+
+const hash =
+req.body.hash;
+
+
+console.log(
+"CHECK DEPLOY:",
+hash
+);
+
+
+
+const rpc =
 await fetch(
 "https://node.testnet.casper.network/rpc",
 {
@@ -188,30 +266,26 @@ jsonrpc:"2.0",
 
 id:1,
 
-method:"account_put_deploy",
-
+method:"info_get_deploy",
 
 params:{
-  deploy:deploy
+deploy_hash:hash,
+finalized_approvals:true
 }
 
 
 })
 
-
-}
-);
-
-
+});
 
 
 const result =
-await rpcResponse.json();
+await rpc.json();
 
 
 
 console.log(
-"CASPER RPC RESULT:"
+"DEPLOY INFO RPC:"
 );
 
 
@@ -229,22 +303,17 @@ res.json(result);
 
 
 
-}
-catch(error){
+}catch(error){
 
 
 console.error(
-"SERVER ERROR:",
+"DEPLOY INFO ERROR",
 error
 );
 
 
-
 res.status(500).json({
-
-message:
-error.message
-
+message:error.message
 });
 
 
@@ -256,62 +325,6 @@ error.message
 
 
 
-
-// Look up a deploy's on-chain status/execution result by hash. Used by the
-// frontend to build the blockchain certificate.
-app.post("/deploy-info", async (req, res) => {
-
-try {
-
-  const hash =
-    req.body?.hash;
-
-  if (!hash) {
-    throw new Error("Missing deploy hash");
-  }
-
-  const rpcResponse =
-    await fetch(
-      "https://node.testnet.casper.network/rpc",
-      {
-        method: "POST",
-
-        headers: {
-          "Content-Type": "application/json"
-        },
-
-        body: JSON.stringify({
-          jsonrpc: "2.0",
-          id: 1,
-          method: "info_get_deploy",
-          params: {
-            deploy_hash: hash,
-            finalized_approvals: false
-          }
-        })
-      }
-    );
-
-  const result =
-    await rpcResponse.json();
-
-  res.json(result);
-
-}
-catch (error) {
-
-  console.error(
-    "DEPLOY-INFO ERROR:",
-    error
-  );
-
-  res.status(500).json({
-    message: error.message
-  });
-
-}
-
-});
 
 
 app.listen(

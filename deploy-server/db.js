@@ -7,14 +7,22 @@ db.pragma("journal_mode = WAL");
 
 db.exec(`
   CREATE TABLE IF NOT EXISTS records (
-    id         INTEGER PRIMARY KEY AUTOINCREMENT,
-    asset      TEXT,
-    weight     REAL,
-    purity     REAL,
-    score      INTEGER,
-    risk       TEXT,
-    tx_hash    TEXT,
-    date       TEXT,
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+
+    asset TEXT CHECK(asset IN ('gold','silver')),
+
+    weight REAL,
+
+    purity REAL,
+
+    score INTEGER,
+
+    risk TEXT,
+
+    tx_hash TEXT,
+
+    date TEXT,
+
     created_at TEXT DEFAULT CURRENT_TIMESTAMP
   )
 `);

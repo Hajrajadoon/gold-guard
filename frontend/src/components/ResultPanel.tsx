@@ -4,143 +4,365 @@ import { waitForDeployInfo } from "../lib/casper/status";
 import { useWalletStore } from "../store/walletStore";
 import { VerificationResult } from "../types/verification";
 
+
 type Props = {
   result: VerificationResult;
 };
 
-export default function ResultPanel({ result }: Props) {
-  const { publicKey } = useWalletStore();
-  const [downloading, setDownloading] = useState(false);
-  const [progress, setProgress] = useState("");
 
-  const explorerUrl = (tx: string) =>
+export default function ResultPanel({
+  result
+}: Props) {
+
+
+  const { publicKey } =
+    useWalletStore();
+
+
+  const [downloading,setDownloading] =
+    useState(false);
+
+
+  const [progress,setProgress] =
+    useState("");
+
+
+
+  const explorerUrl = (
+    tx:string
+  ) =>
     `https://testnet.cspr.live/deploy/${tx}`;
 
-  const onChain =
-    !!result.txHash && result.txHash !== "FAILED";
 
-  const handleDownload = async () => {
+
+  const onChain =
+    Boolean(
+      result.txHash &&
+      result.txHash !== "FAILED"
+    );
+
+
+
+  const handleDownload = async()=>{
+
+
     setDownloading(true);
-    setProgress("Fetching on-chain data…");
-    try {
-      // Wait for the deploy to finalize so the certificate reflects the
-      // confirmed record (status, block, gas) instead of "Pending".
-      const info = onChain
-        ? await waitForDeployInfo(result.txHash, {
-            onTick: (a, t) => setProgress(`Confirming on-chain… (${a}/${t})`),
-          })
-        : null;
+
+    setProgress(
+      "Waiting for Casper confirmation..."
+    );
+
+
+    try{
+
+
+      const info =
+        onChain
+        ?
+        await waitForDeployInfo(
+          result.txHash,
+          {
+
+            tries:30,
+
+            intervalMs:5000,
+
+
+            onTick:(attempt,total)=>
+            {
+              setProgress(
+                `Confirming on-chain... (${attempt}/${total})`
+              );
+            }
+
+          }
+        )
+        :
+        null;
+
+
+
+      console.log(
+        "FINAL DEPLOY INFO:",
+        info
+      );
+
+
 
       generateCertificate({
-        asset: result.asset,
-        weight: result.weight,
-        purity: result.purity,
-        score: result.score,
-        risk: result.risk,
-        network: "Casper Testnet (casper-test)",
-        deployHash: onChain ? result.txHash : null,
-        blockHash: info?.blockHash ?? null,
-        blockHeight: info?.blockHeight ?? null,
-        caller: info?.caller ?? publicKey ?? null,
-        status: info?.status ?? (onChain ? "Pending" : "Failed"),
-        costMotes: info?.costMotes ?? null,
-        consumedMotes: info?.consumedMotes ?? null,
-        timestamp: info?.timestamp ?? null,
-        explorerUrl: onChain ? explorerUrl(result.txHash) : null,
+
+        asset:
+          result.asset,
+
+
+        weight:
+          result.weight,
+
+
+        purity:
+          result.purity,
+
+
+        score:
+          result.score,
+
+
+        risk:
+          result.risk,
+
+
+        network:
+          "Casper Testnet (casper-test)",
+
+
+        deployHash:
+          onChain
+          ?
+          result.txHash
+          :
+          null,
+
+
+        blockHash:
+          info?.blockHash ?? null,
+
+
+        blockHeight:
+          info?.blockHeight ?? null,
+
+
+        caller:
+          info?.caller ??
+          publicKey ??
+          null,
+
+
+        status:
+          info?.status ??
+          (
+            onChain
+            ?
+            "Pending"
+            :
+            "Failed"
+          ),
+
+
+        costMotes:
+          info?.costMotes ?? null,
+
+
+        consumedMotes:
+          info?.consumedMotes ?? null,
+
+
+        timestamp:
+          info?.timestamp ?? null,
+
+
+        explorerUrl:
+          onChain
+          ?
+          explorerUrl(result.txHash)
+          :
+          null
+
       });
-    } finally {
-      setDownloading(false);
-      setProgress("");
+
+
+
     }
+    catch(error){
+
+      console.error(
+        "CERTIFICATE ERROR:",
+        error
+      );
+
+    }
+    finally{
+
+      setDownloading(false);
+
+      setProgress("");
+
+    }
+
   };
 
-  return (
-    <section className="rounded-2xl border border-line bg-vault-800/70 backdrop-blur-sm shadow-vault overflow-hidden">
 
-      <header className="flex items-center justify-between px-6 py-4 border-b border-line">
-        <span className="eyebrow">Certificate</span>
-        <span className="eyebrow flex items-center gap-2">
-          <span
-            className="inline-block h-1.5 w-1.5 rounded-full"
-            style={{ background: onChain ? "#5DD39E" : "#F2786F" }}
-          />
-          {onChain ? "On-chain" : "Off-chain"}
-        </span>
-      </header>
 
-      <div className="p-6 space-y-5">
+return (
 
-        <div className="flex items-center justify-between gap-4">
-          <div className="min-w-0">
-            <p className="text-ink font-medium truncate">
-              {result.asset || "Unnamed asset"}
-            </p>
-            <p className="font-mono text-[11px] text-ink-faint tnum mt-1">
-              {result.weight}g · {result.purity}% · score {result.score}/100
-            </p>
-          </div>
-          <span
-            className="font-mono text-[11px] px-2.5 py-1 rounded border shrink-0"
-            style={{
-              color:
-                result.risk === "HIGH" ? "#F2786F" : result.risk === "MEDIUM" ? "#FBC54B" : "#5DD39E",
-              borderColor:
-                result.risk === "HIGH" ? "#F2786F55" : result.risk === "MEDIUM" ? "#FBC54B55" : "#5DD39E55",
-              background:
-                result.risk === "HIGH" ? "#F2786F14" : result.risk === "MEDIUM" ? "#FBC54B14" : "#5DD39E14",
-            }}
-          >
-            {result.risk} RISK
-          </span>
-        </div>
+<section className="rounded-2xl border border-line bg-vault-800/70 backdrop-blur-sm shadow-vault overflow-hidden">
 
-        {/* Transaction reference */}
-        <div className="rounded-xl border border-line bg-vault-900/60 px-4 py-3">
-          <p className="eyebrow mb-1.5">Transaction</p>
-          {onChain ? (
-            <a
-              href={explorerUrl(result.txHash)}
-              target="_blank"
-              rel="noreferrer"
-              className="font-mono text-xs text-gold-400 hover:text-gold-500 break-all transition-colors"
-            >
-              {result.txHash}
-            </a>
-          ) : (
-            <p className="font-mono text-xs text-ink-faint">
-              Not stored on the blockchain.
-            </p>
-          )}
-        </div>
 
-        <div className="flex flex-col sm:flex-row gap-3">
-          <button
-            onClick={handleDownload}
-            disabled={downloading}
-            className="flex-1 rounded-xl py-3 font-display font-semibold text-vault-900
-                       bg-gradient-to-r from-gold-400 to-gold-600 hover:shadow-glow
-                       disabled:opacity-60 disabled:cursor-not-allowed transition-all duration-200"
-          >
-            {downloading ? progress || "Working…" : "Download certificate"}
-          </button>
+<header className="flex items-center justify-between px-6 py-4 border-b border-line">
 
-          {onChain ? (
-            <a
-              href={explorerUrl(result.txHash)}
-              target="_blank"
-              rel="noreferrer"
-              className="flex-1 text-center rounded-xl py-3 font-medium text-ink
-                         border border-line hover:border-gold-600/60 hover:text-gold-400 transition-colors"
-            >
-              View on cspr.live ↗
-            </a>
-          ) : (
-            <div className="flex-1 text-center rounded-xl py-3 text-ink-faint border border-line cursor-not-allowed">
-              Not on-chain yet
-            </div>
-          )}
-        </div>
-      </div>
-    </section>
-  );
+<span className="eyebrow">
+Certificate
+</span>
+
+
+<span className="eyebrow">
+
+<span
+className="inline-block h-1.5 w-1.5 rounded-full mr-2"
+style={{
+background:
+onChain
+?
+"#5DD39E"
+:
+"#F2786F"
+}}
+/>
+
+
+{onChain
+?
+"On-chain"
+:
+"Off-chain"}
+
+</span>
+
+</header>
+
+
+
+<div className="p-6 space-y-5">
+
+
+<div className="flex items-center justify-between">
+
+<div>
+
+<p className="text-ink font-medium">
+
+{result.asset}
+
+</p>
+
+
+<p className="font-mono text-xs text-ink-faint">
+
+{result.weight}g · {result.purity}% · score {result.score}/100
+
+</p>
+
+</div>
+
+
+<span className="font-mono text-xs">
+
+{result.risk} RISK
+
+</span>
+
+
+</div>
+
+
+
+
+<div className="rounded-xl border border-line bg-vault-900/60 px-4 py-3">
+
+<p className="eyebrow">
+Transaction
+</p>
+
+
+{
+onChain
+?
+
+<a
+
+href={
+explorerUrl(result.txHash)
+}
+
+target="_blank"
+
+rel="noreferrer"
+
+className="font-mono text-xs text-gold-400 break-all"
+
+>
+
+{result.txHash}
+
+</a>
+
+:
+
+<p className="text-xs">
+Not stored
+</p>
+
+}
+
+
+</div>
+
+
+
+
+<button
+
+onClick={handleDownload}
+
+disabled={downloading}
+
+className="w-full rounded-xl py-3 bg-gradient-to-r from-gold-400 to-gold-600 text-black"
+
+>
+
+
+{
+downloading
+?
+progress
+:
+"Download certificate"
+}
+
+
+</button>
+
+
+
+{
+onChain
+&&
+
+<a
+
+href={
+explorerUrl(result.txHash)
+}
+
+target="_blank"
+
+rel="noreferrer"
+
+className="block text-center border rounded-xl py-3"
+
+>
+
+View on cspr.live ↗
+
+</a>
+
+}
+
+
+</div>
+
+
+</section>
+
+);
+
 }

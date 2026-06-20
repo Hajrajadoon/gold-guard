@@ -15,7 +15,7 @@ export default function TxExplorer({ txHash }: Props) {
       </p>
 
       <a
-        href={`https://testnet.cspr.live/deploy/${txHash}`}
+       href={`https://testnet.cspr.live/transaction/${txHash}`}
         target="_blank"
         className="text-blue-400 text-xs mt-3 inline-block hover:underline"
       >

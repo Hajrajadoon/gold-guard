@@ -30,120 +30,151 @@ import { getRecords, saveRecord } from "../lib/api/records";
 export default function Dashboard() {
 
 
-  const [assetName, setAssetName] =
-    useState("");
+const [assetName, setAssetName] =
+  useState<"gold" | "silver" | "">("");
 
-  const [weight, setWeight] =
-    useState("");
+const [weight, setWeight] =
+  useState("");
 
-  const [purity, setPurity] =
-    useState("");
+const [purity, setPurity] =
+  useState("");
 
+const [wallet, setWallet] =
+  useState<string | null>(null);
 
-  const [wallet, setWallet] =
-    useState<string | null>(null);
+const [result, setResult] =
+  useState<VerificationResult | null>(null);
 
+const [history, setHistory] =
+  useState<VerificationResult[]>([]);
 
-  const [result, setResult] =
-    useState<VerificationResult | null>(null);
+const [loading, setLoading] =
+  useState(false);
 
-
-  const [history, setHistory] =
-    useState<VerificationResult[]>([]);
-
-
-  const [loading, setLoading] =
-    useState(false);
-
-
-  const [error, setError] =
-    useState<string | null>(null);
+const [error, setError] =
+  useState<string | null>(null);
 
 
 
-  useEffect(() => {
+useEffect(() => {
 
-    // Load from the database; fall back to the local cache if the
-    // server is unreachable.
-    (async () => {
-      try {
-        const rows = await getRecords();
-        setHistory(rows);
-      } catch {
-        const saved = localStorage.getItem("gg_history");
-        if (saved) {
-          setHistory(JSON.parse(saved));
-        }
+  (async () => {
+
+    try {
+
+      const rows =
+        await getRecords();
+
+      setHistory(rows);
+
+    }
+    catch {
+
+      const saved =
+        localStorage.getItem(
+          "gg_history"
+        );
+
+      if(saved){
+
+        setHistory(
+          JSON.parse(saved)
+        );
+
       }
-    })();
 
-  }, []);
+    }
 
+  })();
 
-
-  useEffect(() => {
-
-    localStorage.setItem(
-      "gg_history",
-      JSON.stringify(history)
-    );
-
-  }, [history]);
+}, []);
 
 
 
+useEffect(() => {
 
-  const calculateScore = (
-    w:number,
-    p:number
-  ) => {
+  localStorage.setItem(
+    "gg_history",
+    JSON.stringify(history)
+  );
 
-
-    const safeW =
-      Number.isFinite(w)
-      ? w
-      : 0;
+}, [history]);
 
 
-    const safeP =
+
+const calculateScore = (
+  w:number,
+  p:number,
+  asset:"gold" | "silver"
+) => {
+
+
+  const safeWeight =
+    Number.isFinite(w)
+    ? w
+    : 0;
+
+
+  const safePurity =
+    Math.min(
       Number.isFinite(p)
       ? p
-      : 0;
-
-
-    return Math.min(
-      100,
-      Math.round(
-        safeP * 0.8 +
-        (safeW > 50 ? 15 : 5)
-      )
+      : 0,
+      100
     );
 
-  };
+
+
+  const purityMultiplier =
+    asset === "gold"
+    ? 0.85
+    : 0.75;
 
 
 
-
-  const calculateRisk =
-  (
-    score:number
-  ):
-  "LOW"|"MEDIUM"|"HIGH" => {
+  const purityScore =
+    safePurity *
+    purityMultiplier;
 
 
-    if(score > 80)
-      return "LOW";
+
+  const weightScore =
+    safeWeight >= 100
+    ? 15
+    : 5;
 
 
-    if(score > 60)
-      return "MEDIUM";
+
+  return Math.min(
+    100,
+    Math.round(
+      purityScore +
+      weightScore
+    )
+  );
+
+};
 
 
-    return "HIGH";
 
-  };
+const calculateRisk =
+(
+  score:number
+):
+"LOW"|"MEDIUM"|"HIGH" => {
 
 
+  if(score > 80)
+    return "LOW";
+
+
+  if(score > 60)
+    return "MEDIUM";
+
+
+  return "HIGH";
+
+};
 
 
   const handleConnect = async () => {
@@ -222,37 +253,43 @@ const onVerify = async () => {
 
 
 
-    const w =
-      parseFloat(
-        weight || "0"
-      );
+   const w =
+  Number(weight) || 0;
 
 
-    const p =
-      parseFloat(
-        purity || "0"
-      );
-
-
-    const score =
-      calculateScore(
-        w,
-        p
-      );
-
-
-    const risk =
-      calculateRisk(
-        score
-      );
+const p =
+  Number(purity) || 0;
 
 
 
-    let txHash:string | null =
-      null;
+if(
+  assetName !== "gold" &&
+  assetName !== "silver"
+){
+
+  throw new Error(
+    "Please select gold or silver"
+  );
+
+}
 
 
 
+const score =
+  calculateScore(
+    w,
+    p,
+    assetName
+  );
+
+const risk =
+  calculateRisk(
+    score
+  );
+
+
+let txHash:string | null =
+  null;
     try {
 
 
