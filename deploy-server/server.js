@@ -324,15 +324,23 @@ message:error.message
 
 
 
+// ===============================
+// ROOT
+// ===============================
+
+app.get("/", (req, res) => {
+  res.send("GoldGuard Backend Running");
+});
 
 
+const PORT = process.env.PORT || 4000;
 
 app.listen(
-4000,
+PORT,
 ()=>{
 
 console.log(
-"Deploy server running on port 4000"
+`Deploy server running on port ${PORT}`
 );
 
 }
