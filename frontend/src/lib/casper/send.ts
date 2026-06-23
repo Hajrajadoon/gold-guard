@@ -23,7 +23,7 @@ console.log(
 
 const response =
 await fetch(
-  "https://acre-pediatric-marauding.ngrok-free.dev",
+  "http://localhost:4000/deploy",
   {
     method:"POST",
 
@@ -84,7 +84,7 @@ catch(e:any){
 
 console.error(
   "DEPLOY FAILED",
-  e
+  
 );
 
 

@@ -288,7 +288,7 @@ The `call()` function installs the contract and registers it under the named key
 - **Network:** `casper-test` (testnet). RPC endpoints are defined in
   `frontend/src/lib/casper/rpc.ts` and `deploy-server/server.js`
   (`https://node.testnet.casper.network/rpc`).
-- **Deploy server URL:** hard-coded to `"https://acre-pediatric-marauding.ngrok-free.dev/deploy-info"/deploy` in
+- **Deploy server URL:** hard-coded to `"http://localhost:4000/deploy-info"/deploy` in
   `frontend/src/lib/casper/send.ts`. Update this for non-local deployments.
 - **Payment:** deploys use a fixed standard payment of `20000000000` motes
   (20 CSPR).

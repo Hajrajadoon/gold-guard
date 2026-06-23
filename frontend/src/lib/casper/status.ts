@@ -32,7 +32,7 @@ export const getDeployInfo = async (
   try {
 
     const res = await fetch(
-      "https://acre-pediatric-marauding.ngrok-free.dev/deploy-info",
+      "http://localhost:4000/deploy-info",
       {
         method: "POST",
         headers: { "Content-Type": "application/json" },
