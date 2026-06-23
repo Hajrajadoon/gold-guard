@@ -1,6 +1,6 @@
 import { VerificationResult } from "../../types/verification";
 
-const BASE = "http://localhost:4000";
+const BASE = "https://acre-pediatric-marauding.ngrok-free.dev";
 
 // Load saved verification records from the server (newest first).
 export const getRecords = async (): Promise<VerificationResult[]> => {

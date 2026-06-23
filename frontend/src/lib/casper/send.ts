@@ -23,7 +23,7 @@ console.log(
 
 const response =
 await fetch(
-  "http://localhost:4000/deploy",
+  "https://acre-pediatric-marauding.ngrok-free.dev",
   {
     method:"POST",
 
