@@ -327,13 +327,10 @@ message:error.message
 
 
 
-app.listen(
-4000,
-()=>{
+const PORT = process.env.PORT || 4000;
 
-console.log(
-"Deploy server running on port 4000"
-);
-
-}
-);
+app.listen(PORT, () => {
+  console.log(
+    `Deploy server running on port ${PORT}`
+  );
+});
