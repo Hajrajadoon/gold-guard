@@ -237,8 +237,8 @@ npm run dev        # start Vite dev server
 Open the dev server URL, connect your Casper Wallet, and submit an asset from
 the **Dashboard**.
 
-> **Note:** The frontend posts signed deploys to `"https://acre-pediatric-marauding.ngrok-free.dev/deploy-info"/deploy`,
-> so the deploy server must be running for on-chain submission to succeed.
+> **Note:** The frontend posts signed deploys to `https://gold-guard.onrender.com/deploy`,
+> so the deploy server must be reachable for on-chain submission to succeed.
 
 ---
 
@@ -288,8 +288,9 @@ The `call()` function installs the contract and registers it under the named key
 - **Network:** `casper-test` (testnet). RPC endpoints are defined in
   `frontend/src/lib/casper/rpc.ts` and `deploy-server/server.js`
   (`https://node.testnet.casper.network/rpc`).
-- **Deploy server URL:** hard-coded to `"http://localhost:4000/deploy-info"/deploy` in
-  `frontend/src/lib/casper/send.ts`. Update this for non-local deployments.
+- **Deploy server URL:** hard-coded to `https://gold-guard.onrender.com` in
+  `frontend/src/lib/casper/send.ts`, `frontend/src/lib/casper/status.ts`, and
+  `frontend/src/lib/api/records.ts`. Update these for local or other deployments.
 - **Payment:** deploys use a fixed standard payment of `20000000000` motes
   (20 CSPR).
 - **History** is persisted client-side in `localStorage` under the `gg_history`
