@@ -23,7 +23,7 @@ console.log(
 
 const response =
 await fetch(
-  "http://localhost:4000/deploy",
+  "https://gold-guard.onrender.com/deploy",
   {
     method:"POST",
 

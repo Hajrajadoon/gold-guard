@@ -1,6 +1,6 @@
 import { VerificationResult } from "../../types/verification";
 
-const BASE = "http://localhost:4000";
+const BASE = "https://gold-guard.onrender.com";
 
 // Load saved verification records from the server (newest first).
 export const getRecords = async (): Promise<VerificationResult[]> => {

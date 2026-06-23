@@ -32,7 +32,7 @@ export const getDeployInfo = async (
   try {
 
     const res = await fetch(
-      "http://localhost:4000/deploy-info",
+      "https://gold-guard.onrender.com/deploy-info",
       {
         method: "POST",
         headers: { "Content-Type": "application/json" },
