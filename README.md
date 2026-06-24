@@ -8,24 +8,6 @@ GoldGuard AI lets users submit precious metal assets such as gold and silver for
 
 ## Table of Contents
 
-- [Overview](#overview)
-- [How It Works](#how-it-works)
-- [Architecture](#architecture)
-- [Tech Stack](#tech-stack)
-- [Project Structure](#project-structure)
-- [Getting Started](#getting-started)
-  - [Prerequisites](#prerequisites)
-  - [First Time Run](#first-time-run)
-  - [Regular](#regular)
-  - [1. Smart Contract](#1-smart-contract-casper-contract-clean)
-  - [2. Deploy Server](#2-deploy-server-deploy-server)
-  - [3. Frontend](#3-frontend-frontend)
-- [Smart Contract](#smart-contract)
-- [Verification Flow](#verification-flow)
-- [Configuration & Notes](#configuration--notes)
-- [License](#license)
-## Table of Contents
-
 - [Live Deployment](#live-deployment)
 - [Overview](#overview)
 - [How It Works](#how-it-works)
@@ -48,7 +30,9 @@ GoldGuard AI lets users submit precious metal assets such as gold and silver for
 - [Verification Flow](#verification-flow)
 - [Configuration & Notes](#configuration--notes)
 - [License](#license)
----## Live Deployment
+---
+
+## Live Deployment
 
 ### Frontend
 
@@ -85,7 +69,7 @@ The target network is the **Casper Testnet** (`casper-test`).
 ## How It Works
 
 1. The user connects their **Casper Wallet** browser extension.
-2. They enter a gold asset: **name**, **weight (g)**, and **purity (%)**.
+2.2. They enter a precious metal asset (**Gold** or **Silver**) along with its **weight (g)** and **purity (%)**.
 3. The scoring engine (`GoldGuardAgent`) computes:
    - a **Trust Score** (0–100), weighted mostly by purity, and
    - a **Risk Level** — `LOW`, `MEDIUM`, or `HIGH`.
