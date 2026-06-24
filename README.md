@@ -58,30 +58,65 @@ The target network is the **Casper Testnet** (`casper-test`).
 
 ```
                     ┌──────────────────────────────┐
-                    │          Frontend            │
-                    │  React + Vite + Tailwind     │
-                    │  - GoldGuardAgent (scoring)  │
-                    │  - casper-js-sdk (deploy)    │
-                    └───────────┬──────────────────┘
-                                │
-              sign deploy       │   POST /deploy (signed deploy JSON)
-        ┌───────────────────────┤
-        ▼                       ▼
-┌────────────────┐     ┌──────────────────────┐
-│ Casper Wallet  │     │     Deploy Server    │
-│  (extension)   │     │   Express @ :4000    │
-└────────────────┘     └──────────┬───────────┘
-                                   │ account_put_deploy (JSON-RPC)
-                                   ▼
-                    ┌──────────────────────────────┐
-                    │       Casper Testnet         │
-                    │  node.testnet.casper.network │
-                    │   ── runs ──>  verify()      │
-                    │   stores: asset, score, risk │
-                    └──────────────────────────────┘
+                   ## Production Architecture
+
+```text
+                    ┌──────────────────────────────────────┐
+                    │              Frontend                │
+                    │      React + Vite + Tailwind CSS     │
+                    │                                      │
+                    │  Netlify Deployment                  │
+                    │  jovial-salmiakki-9def31.netlify.app │
+                    │                                      │
+                    │  - GoldGuardAgent                    │
+                    │  - Casper Wallet SDK                 │
+                    │  - Certificate Generator             │
+                    └────────────────┬─────────────────────┘
+                                     │
+                      Connect Wallet │
+                      Sign Deploy    │
+                                     ▼
+
+                           ┌─────────────────┐
+                           │  Casper Wallet  │
+                           │   Extension     │
+                           │  (Testnet)      │
+                           └────────┬────────┘
+                                    │
+                                    │ Signed Deploy
+                                    ▼
+
+                    ┌──────────────────────────────────────┐
+                    │            Backend API               │
+                    │                                      │
+                    │  Node.js + Express                   │
+                    │  SQLite Database                     │
+                    │                                      │
+                    │  Render Deployment                   │
+                    │  gold-guard.onrender.com             │
+                    │                                      │
+                    │  POST /deploy                        │
+                    │  GET  /records                       │
+                    └────────────────┬─────────────────────┘
+                                     │
+                    account_put_deploy JSON-RPC
+                                     │
+                                     ▼
+
+                    ┌──────────────────────────────────────┐
+                    │          Casper Testnet              │
+                    │                                      │
+                    │ node.testnet.casper.network          │
+                    │                                      │
+                    │ Smart Contract: verify()             │
+                    │                                      │
+                    │ Stores:                              │
+                    │ - Asset Type                         │
+                    │ - Trust Score                        │
+                    │ - Risk Level                         │
+                    └──────────────────────────────────────┘
 ```
 
----
 
 ## Tech Stack
 
@@ -155,21 +190,95 @@ gold-guard/
 
 ### First Time Run
 
-For a fresh clone / new machine. This installs dependencies; the SQLite
-database is created automatically on first server start.
+### Production Deployment
+
+GoldGuard AI is currently deployed and accessible online.
+
+#### Live Frontend
+
+```text
+https://jovial-salmiakki-9def31.netlify.app
+```
+
+Hosted on Netlify and responsible for:
+
+* User Interface
+* Asset Verification Form
+* Casper Wallet Integration
+* Certificate Generation
+* Verification Ledger Display
+
+#### Live Backend API
+
+```text
+https://gold-guard.onrender.com
+```
+
+Hosted on Render and responsible for:
+
+* Deploy Submission
+* Blockchain Communication
+* Verification Record Storage
+* SQLite Database Management
+
+#### Database
+
+The application uses SQLite (`better-sqlite3`).
+
+The database is hosted alongside the backend service on Render and stores:
+
+* Asset Type
+* Weight
+* Purity
+* Trust Score
+* Risk Level
+* Deploy Hash
+* Verification Timestamp
+
+---
+
+### Using the Live Application
+
+1. Install the Casper Wallet browser extension.
+2. Switch the wallet network to **Casper Testnet**.
+3. Obtain free testnet CSPR from the Casper Faucet.
+4. Open the frontend application:
+
+```text
+https://jovial-salmiakki-9def31.netlify.app
+```
+
+5. Connect your Casper Wallet.
+6. Select the asset type (Gold or Silver).
+7. Enter the weight and purity values.
+8. Click **Run Assay**.
+9. Sign the transaction in Casper Wallet.
+10. Wait for blockchain confirmation.
+11. View the verification result and transaction hash.
+12. Download the blockchain-backed certificate.
+
+---
+
+### Local Development Setup (Optional)
+
+Developers wishing to run GoldGuard AI locally can use:
 
 ```bash
-# 1) Deploy server — relay + records DB (Terminal 1)
+# Backend
 cd deploy-server
-npm install            # also compiles the better-sqlite3 native binding
-node server.js         # creates goldguard.db on first run
-# → Deploy server running on port 4000
+npm install
+node server.js
 
-# 2) Frontend (Terminal 2)
+# Frontend
 cd frontend
 npm install
-npm run dev            # then open the printed http://localhost:5173 URL
+npm run dev
 ```
+
+The frontend will start on a local Vite development server and connect to the locally running backend.
+
+> Note: Production users do not need to run any local services. The application is fully deployed on Netlify and Render and can be accessed directly through a web browser.
+
 
 Then connect your Casper Wallet (funded with testnet CSPR) and run an assay.
 
@@ -177,68 +286,190 @@ Then connect your Casper Wallet (funded with testnet CSPR) and run an assay.
 > embedded in the frontend. You only need the Rust toolchain if you change
 > `lib.rs` (see [Smart Contract](#1-smart-contract-casper-contract-clean)).
 
-### Regular
+## Deployment & Usage
 
-Day-to-day, once dependencies are already installed:
+### Production Environment
 
-```bash
-# Terminal 1
-cd deploy-server && node server.js
+GoldGuard AI is currently deployed and operational on the Casper Testnet.
 
-# Terminal 2
-cd frontend && npm run dev
-```
+| Component   | Platform       | URL                                         |
+| ----------- | -------------- | ------------------------------------------- |
+| Frontend    | Netlify        | https://jovial-salmiakki-9def31.netlify.app |
+| Backend API | Render         | https://gold-guard.onrender.com             |
+| Blockchain  | Casper Testnet | https://node.testnet.casper.network         |
 
-Saved records persist in `deploy-server/goldguard.db` between runs. Always start
-the deploy server before verifying, since the frontend submits deploys and reads
-records through it.
+The deployed application allows users to:
 
-### 1. Smart Contract (`casper-contract-clean/`)
+* Connect a Casper Wallet account.
+* Submit Gold or Silver assets for verification.
+* Generate a Trust Score and Risk Assessment.
+* Sign blockchain transactions.
+* Record verification results on-chain.
+* View verification history.
+* Download blockchain-backed PDF certificates.
+
+---
+
+### Requirements for End Users
+
+Before using GoldGuard AI, users must:
+
+1. Install the Casper Wallet browser extension.
+2. Switch the wallet network to **Casper Testnet**.
+3. Obtain free testnet CSPR from the Casper Faucet.
+4. Visit the deployed frontend application.
+5. Connect their wallet and begin verification.
+
+> **Important:** Every verification requires a blockchain transaction. A small amount of testnet CSPR will be consumed for transaction fees when signing and submitting deploys.
+
+---
+
+### Smart Contract (`casper-contract-clean/`)
+
+The smart contract is responsible for storing verification results on the Casper blockchain.
+
+Main responsibilities:
+
+* Accept verification data.
+* Store asset information.
+* Store trust scores.
+* Store risk classifications.
+* Generate immutable blockchain records.
+
+To rebuild the contract locally:
 
 ```bash
 cd casper-contract-clean
 
-# Add the WASM target and build the release WASM
+# Build WASM contract
 make build-contract
 
-# Run integration tests
+# Run tests
 make test
 
-# Lint / format checks
+# Run lint checks
 make check-lint
 ```
 
-The compiled artifact is produced at
-`contract/target/wasm32-unknown-unknown/release/contract.wasm`.
+Compiled contract output:
 
-### 2. Deploy Server (`deploy-server/`)
+```text id="k4o1lh"
+contract/target/wasm32-unknown-unknown/release/contract.wasm
+```
+
+---
+
+### Backend API (`deploy-server/`)
+
+Production Backend:
+
+```text id="uqc4oh"
+https://gold-guard.onrender.com
+```
+
+Responsibilities:
+
+* Receive signed deploys.
+* Relay deploys to Casper Testnet.
+* Manage verification records.
+* Store records in SQLite.
+* Return deploy hashes and transaction status.
+
+Key Endpoints:
+
+```http
+POST /deploy
+GET /records
+```
+
+The deploy endpoint accepts a signed Casper deploy and forwards it to the Casper Testnet RPC for execution.
+
+---
+
+### Frontend (`frontend/`)
+
+Production Frontend:
+
+```text id="s7k6sq"
+https://jovial-salmiakki-9def31.netlify.app
+```
+
+Responsibilities:
+
+* Casper Wallet Integration
+* Verification Dashboard
+* Trust Score Display
+* Risk Assessment Display
+* Verification Ledger
+* PDF Certificate Generation
+
+Users interact entirely through the frontend application without needing to run any local services.
+
+---
+
+### Local Development Setup (Optional)
+
+Developers wishing to contribute or run the project locally may use:
 
 ```bash
+# Terminal 1
 cd deploy-server
 npm install
 node server.js
-# → Deploy server running on port 4000
-```
 
-The server exposes a single endpoint, `POST /deploy`, which accepts a signed
-deploy (either raw or wrapped in `{ deploy: ... }`) and forwards it to the
-Casper testnet RPC.
-
-### 3. Frontend (`frontend/`)
-
-```bash
+# Terminal 2
 cd frontend
 npm install
-npm run dev        # start Vite dev server
-# npm run build    # production build
-# npm run preview  # preview the production build
+npm run dev
 ```
 
-Open the dev server URL, connect your Casper Wallet, and submit an asset from
-the **Dashboard**.
+Local frontend builds will communicate with the configured backend endpoint.
 
-> **Note:** The frontend posts signed deploys to `https://gold-guard.onrender.com/deploy`,
-> so the deploy server must be reachable for on-chain submission to succeed.
+---
+
+### Data Persistence
+
+Verification records are stored in:
+
+```text id="3e5yrk"
+goldguard.db
+```
+
+using SQLite (`better-sqlite3`).
+
+Stored information includes:
+
+* Asset Type
+* Weight
+* Purity
+* Trust Score
+* Risk Level
+* Deploy Hash
+* Verification Timestamp
+
+Records are displayed in the Verification Ledger and linked to their corresponding Casper Testnet transactions.
+
+---
+
+### Blockchain Integration
+
+GoldGuard AI currently operates on:
+
+```text id="f74bbv"
+Network: Casper Testnet
+Chain Name: casper-test
+```
+
+Verification results are submitted as signed deploys through Casper Wallet and permanently recorded on-chain through the GoldGuard verification smart contract.
+
+Each successful verification generates:
+
+* A Deploy Hash
+* An On-Chain Record
+* A Verification Certificate
+* A Ledger Entry
+
+providing a transparent and immutable audit trail for precious metal verification.
 
 ---
 
