@@ -2,7 +2,7 @@
 
 > AI-assisted gold & precious-metal asset verification, anchored on the Casper blockchain.
 
-GoldGuard AI lets a user submit a physical gold asset (name, weight, purity), runs it through a scoring engine that produces a **trust score** and a **risk level**, and then permanently records the verification result **on-chain** on the Casper Network. Each verification can be exported as a downloadable PDF certificate.
+GoldGuard AI lets users submit precious metal assets such as gold and silver for verification. The platform uses an intelligent trust-scoring engine to calculate authenticity and risk levels, then permanently records verification results on the Casper blockchain. Each successful verification can be exported as a blockchain-backed PDF certificate.
 
 ---
 
@@ -25,7 +25,25 @@ GoldGuard AI lets a user submit a physical gold asset (name, weight, purity), ru
 - [Configuration & Notes](#configuration--notes)
 - [License](#license)
 
----
+---## Live Deployment
+
+### Frontend
+
+https://jovial-salmiakki-9def31.netlify.app
+
+### Backend API
+
+https://gold-guard.onrender.com
+
+### Network
+
+Casper Testnet (casper-test)
+
+### Requirements
+
+- Casper Wallet Extension
+- Casper Testnet Network
+- Testnet CSPR from Casper Faucet
 
 ## Overview
 
@@ -56,9 +74,7 @@ The target network is the **Casper Testnet** (`casper-test`).
 
 ## Architecture
 
-```
-                    ┌──────────────────────────────┐
-                   ## Production Architecture
+### Production Architecture
 
 ```text
                     ┌──────────────────────────────────────┐
@@ -73,50 +89,27 @@ The target network is the **Casper Testnet** (`casper-test`).
                     │  - Certificate Generator             │
                     └────────────────┬─────────────────────┘
                                      │
-                      Connect Wallet │
-                      Sign Deploy    │
                                      ▼
-
                            ┌─────────────────┐
                            │  Casper Wallet  │
                            │   Extension     │
-                           │  (Testnet)      │
+                           │   (Testnet)     │
                            └────────┬────────┘
                                     │
-                                    │ Signed Deploy
                                     ▼
-
                     ┌──────────────────────────────────────┐
                     │            Backend API               │
+                    │      gold-guard.onrender.com         │
                     │                                      │
-                    │  Node.js + Express                   │
-                    │  SQLite Database                     │
-                    │                                      │
-                    │  Render Deployment                   │
-                    │  gold-guard.onrender.com             │
-                    │                                      │
-                    │  POST /deploy                        │
-                    │  GET  /records                       │
+                    │  Node.js + Express + SQLite          │
                     └────────────────┬─────────────────────┘
                                      │
-                    account_put_deploy JSON-RPC
-                                     │
                                      ▼
-
                     ┌──────────────────────────────────────┐
                     │          Casper Testnet              │
-                    │                                      │
-                    │ node.testnet.casper.network          │
-                    │                                      │
-                    │ Smart Contract: verify()             │
-                    │                                      │
-                    │ Stores:                              │
-                    │ - Asset Type                         │
-                    │ - Trust Score                        │
-                    │ - Risk Level                         │
+                    │       Smart Contract verify()        │
                     └──────────────────────────────────────┘
 ```
-
 
 ## Tech Stack
 
@@ -188,11 +181,7 @@ gold-guard/
 > `deploy-server/goldguard.db` file and its `records` table are created
 > automatically the first time the deploy server starts.
 
-### First Time Run
 
-### Production Deployment
-
-GoldGuard AI is currently deployed and accessible online.
 
 #### Live Frontend
 
@@ -510,7 +499,9 @@ The `call()` function installs the contract and registers it under the named key
 3. **Build deploy** — `lib/casper/deploy.ts` creates the deploy (`casper-test` chain, 20 CSPR payment) — either a WASM module-bytes install or a stored-contract `verify` call.
 4. **Sign** — the deploy JSON is signed via the Casper Wallet; the signature is normalized and attached as an approval.
 5. **Submit** — `lib/casper/send.ts` POSTs the signed deploy to the relay; `deploy-server/server.js` forwards it to the testnet RPC and returns the deploy hash.
-6. **Persist & certify** — the result (asset, weight, purity, score, risk, tx hash, date) is stored in `localStorage` history and can be exported to PDF via `utils/generateCertificate.ts`.
+6. **Persist & certify** — the result (asset, weight, purity, score, risk, tx hash, date) is stored the result is stored in SQLite records,
+displayed in the Verification Ledger,
+and can be exported as a PDF certificate.
 
 ---
 
