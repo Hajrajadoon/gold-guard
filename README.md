@@ -24,7 +24,30 @@ GoldGuard AI lets users submit precious metal assets such as gold and silver for
 - [Verification Flow](#verification-flow)
 - [Configuration & Notes](#configuration--notes)
 - [License](#license)
+## Table of Contents
 
+- [Live Deployment](#live-deployment)
+- [Overview](#overview)
+- [How It Works](#how-it-works)
+- [Architecture](#architecture)
+- [Tech Stack](#tech-stack)
+- [Project Structure](#project-structure)
+- [Getting Started](#getting-started)
+  - [Prerequisites](#prerequisites)
+  - [Using the Live Application](#using-the-live-application)
+  - [Local Development Setup](#local-development-setup-optional)
+- [Deployment & Usage](#deployment--usage)
+  - [Production Environment](#production-environment)
+  - [Requirements for End Users](#requirements-for-end-users)
+  - [Smart Contract (casper-contract-clean)](#smart-contract-casper-contract-clean)
+  - [Backend API (deploy-server)](#backend-api-deploy-server)
+  - [Frontend (frontend)](#frontend-frontend)
+  - [Data Persistence](#data-persistence)
+  - [Blockchain Integration](#blockchain-integration)
+- [Smart Contract](#smart-contract)
+- [Verification Flow](#verification-flow)
+- [Configuration & Notes](#configuration--notes)
+- [License](#license)
 ---## Live Deployment
 
 ### Frontend
