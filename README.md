@@ -188,7 +188,10 @@ gold-guard/
 > `deploy-server/goldguard.db` file and its `records` table are created
 > automatically the first time the deploy server starts.
 
+## Live Deployment
+## Demo Video
 
+https://youtu.be/yVRrXG-rWAA
 
 #### Live Frontend
 
